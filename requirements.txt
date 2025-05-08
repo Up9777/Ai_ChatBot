@@ -1,5 +1,6 @@
 langchain
 langchain_huggingface
+langchain-community
 langchain_groq
 sentence-transformers
 chromadb
