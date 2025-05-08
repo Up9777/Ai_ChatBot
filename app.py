@@ -6,14 +6,19 @@ from langchain_groq import ChatGroq
 from sentence_transformers import SentenceTransformer
 import chromadb
 import uuid
+import os
 
-# Custom CSS for enhanced UI
+# Fallback if using Streamlit Cloud: fix for SQLite error
+try:
+    import pysqlite3
+    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
+except ModuleNotFoundError:
+    st.warning("pysqlite3 not found; sqlite3 may cause issues on some systems.")
+
+# --- Custom UI Styling ---
 st.markdown("""
     <style>
-    .main {
-        background-color: #f5f7fa;
-        padding: 20px;
-    }
+    .main { background-color: #f5f7fa; padding: 20px; }
     .stTextInput > div > div > input {
         border-radius: 10px;
         border: 1px solid #ced4da;
@@ -50,9 +55,7 @@ st.markdown("""
         background-color: #343a40;
         color: white;
     }
-    h1, h3 {
-        color: #343a40;
-    }
+    h1, h3 { color: #343a40; }
     .stButton > button {
         background-color: #007bff;
         color: white;
@@ -66,35 +69,34 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Ensure necessary libraries are installed
-try:
-    import pysqlite3
-    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-except ModuleNotFoundError:
-    pass
-
-# Initialize Models
+# --- Model & Embeddings Setup ---
 embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Use Streamlit secrets for Groq API Key
+GROQ_API_KEY = st.secrets["groq_api_key"] if "groq_api_key" in st.secrets else os.getenv("GROQ_API_KEY")
+
 chat = ChatGroq(
     temperature=0.7,
     model_name="llama3-70b-8192",
-    groq_api_key="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"
+    groq_api_key=GROQ_API_KEY
 )
-semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Initialize ChromaDB
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
-collection = chroma_client.get_or_create_collection(name="ai_knowledge_base")
+# --- ChromaDB Setup ---
+try:
+    chroma_client = chromadb.PersistentClient(path="./chroma_db")
+    collection = chroma_client.get_or_create_collection(name="ai_knowledge_base")
+except Exception as e:
+    st.error(f"ChromaDB Initialization Error: {e}")
+    st.stop()
 
-# Function to query AI model
+# --- LLM Response ---
 def query_llama3(user_query):
     system_prompt = "System Prompt: Your AI clone personality based on Utkarsh Patil."
-
     messages = [
         SystemMessage(content=system_prompt),
         HumanMessage(content=user_query)
     ]
-
     try:
         response = chat.invoke(messages)
         st.session_state.memory.append({"input": user_query, "output": response.content, "id": str(uuid.uuid4())})
@@ -102,64 +104,38 @@ def query_llama3(user_query):
     except Exception as e:
         return f"⚠ API Error: {str(e)}"
 
-# Streamlit App
+# --- Streamlit App ---
 def main():
-    # Sidebar
-    with st.sidebar:
-        # st.image("https://via.placeholder.com/150", caption="AI Chatbot")
-        st.markdown("### About")
-        st.write("This is an AI chatbot based on Utkarsh Patil, powered by Groq and Streamlit.")
-        if st.button("Clear Chat History"):
-            st.session_state.memory = []
-            st.rerun()
+    st.sidebar.markdown("### About")
+    st.sidebar.write("AI Chatbot based on Utkarsh Patil, powered by Groq & Streamlit.")
+    if st.sidebar.button("Clear Chat History"):
+        st.session_state.memory = []
+        st.rerun()
 
-    # Main content
     st.title("🤖 AI Chatbot")
-    st.markdown("Welcome to the enhanced AI chatbot interface! Ask anything to get started.")
+    st.markdown("Welcome to your personal AI assistant. Ask anything!")
 
-    # Initialize session memory
     if "memory" not in st.session_state:
         st.session_state.memory = []
 
-    # Chat container
+    # Display previous conversation
     st.markdown("### Conversation")
     with st.container():
-        chat_container = st.container()
-        with chat_container:
-            if st.session_state.memory:
-                for chat in st.session_state.memory:
-                    # User message
-                    st.markdown(
-                        f"""
-                        <div style='display: flex; justify-content: flex-end;'>
-                            <div class='user-message'>
-                                <strong>You:</strong> {chat['input']}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    # AI response
-                    st.markdown(
-                        f"""
-                        <div style='display: flex; justify-content: flex-start;'>
-                            <div class='ai-message'>
-                                <strong>AI:</strong> {chat['output']}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-            else:
-                st.markdown("<div style='text-align: center; color: #6c757d;'>No chat history yet. Start the conversation!</div>", unsafe_allow_html=True)
+        for chat_entry in st.session_state.memory:
+            st.markdown(
+                f"""<div style='display: flex; justify-content: flex-end;'>
+                        <div class='user-message'><strong>You:</strong> {chat_entry['input']}</div>
+                   </div>""", unsafe_allow_html=True)
+            st.markdown(
+                f"""<div style='display: flex; justify-content: flex-start;'>
+                        <div class='ai-message'><strong>AI:</strong> {chat_entry['output']}</div>
+                   </div>""", unsafe_allow_html=True)
 
-    # User input
     with st.form(key="chat_form", clear_on_submit=True):
         user_query = st.text_input("Your question:", placeholder="Type your message here...")
-        submit_button = st.form_submit_button("Send")
-        
-        if submit_button and user_query:
-            response = query_llama3(user_query)
+        submit = st.form_submit_button("Send")
+        if submit and user_query:
+            _ = query_llama3(user_query)
             st.rerun()
 
 if __name__ == "__main__":
