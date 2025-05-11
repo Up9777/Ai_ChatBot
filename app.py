@@ -8,6 +8,13 @@ import chromadb
 import uuid
 import os
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+
+# Example use
+print("Using Groq API key:", GROQ_API_KEY[:8] + "..." if GROQ_API_KEY else "Not set")
+
+
 # Fallback if using Streamlit Cloud: fix for SQLite error
 try:
     import pysqlite3
@@ -74,7 +81,10 @@ embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-Mi
 semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Use Streamlit secrets for Groq API Key
-GROQ_API_KEY = st.secrets["groq_api_key"] if "groq_api_key" in st.secrets else os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = "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"
+
+
+
 
 chat = ChatGroq(
     temperature=0.7,
