@@ -7,7 +7,6 @@ Prerequisites
 Python: Version 3.8 or higher
 pip: Python package manager
 Git: For cloning the repository
-A Groq API Key: Obtain one from Groq
 A modern web browser (e.g., Chrome, Firefox)
 
 📥 Installation & Setup
