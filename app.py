@@ -10,17 +10,8 @@ import os
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-
 # Example use
 print("Using Groq API key:", GROQ_API_KEY[:8] + "..." if GROQ_API_KEY else "Not set")
-
-
-# Fallback if using Streamlit Cloud: fix for SQLite error
-try:
-    import pysqlite3
-    sys.modules["sqlite3"] = sys.modules.pop("pysqlite3")
-except ModuleNotFoundError:
-    st.warning("pysqlite3 not found; sqlite3 may cause issues on some systems.")
 
 # --- Custom UI Styling ---
 st.markdown("""
@@ -82,9 +73,6 @@ semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Use Streamlit secrets for Groq API Key
 GROQ_API_KEY = "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"
-
-
-
 
 chat = ChatGroq(
     temperature=0.7,
