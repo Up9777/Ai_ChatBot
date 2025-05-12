@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Build Your Own AI Clone
 
 A Streamlit-based web application for an AI chatbot powered by Groq, LangChain, and ChromaDB. This project allows you to interact with a personalized AI assistant with a sleek UI and persistent conversation history.
@@ -185,10 +184,6 @@ your-repo-name/
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## 📬 Contact
-
-For questions or feedback, reach out via [GitHub Issues](https://github.com/your-username/your-repo-name/issues) or email at your-email@example.com.
-=======
 
 🛠️ Built With
 
@@ -225,5 +220,5 @@ Open a Pull Request.
 📜 License
 This project is licensed under the MIT License. See the LICENSE file for details.
 📬 Contact
-For questions or feedback, reach out via GitHub Issues or email at your-email@example.com.
->>>>>>> 4dc09df8e2b1960b01c52eeca56bbeac6c4df020
+For questions or feedback, reach out via GitHub Issues or email at patilutkarsh6777@gmail.com.
+
